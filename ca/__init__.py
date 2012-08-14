@@ -1,5 +1,18 @@
+"""ca package contains Certificate Authority classes
+"""
+__author__ = "P J Kershaw"
+__date__ = "10/08/12"
+__copyright__ = "(C) 2012 Science and Technology Facilities Council"
+__license__ = "BSD - see LICENSE file in top-level directory"
+__contact__ = "Philip.Kershaw@stfc.ac.uk"
+__revision__ = "$Id: $"
+from ConfigParser import ConfigParser, SafeConfigParser
+from os import path
+import logging
+log = logging.getLogger(__name__)
 
 from OpenSSL import crypto
+
 
 class Utils(object):
     """Utility class containing helper functions for use with Certificate
@@ -60,16 +73,109 @@ class Utils(object):
         return cert_req
 
 
+class CertificateAuthorityCSRError(Exception):
+    """Error with input certificate signing request"""
+    
+    
 class CertificateAuthority(object):
     """Provide basic functionality for a Certificate Authority"""
     certificate_version2 = 1
     certificate_version3 = 2
+    
+    __slots__ = ('__cert', '__key', '__serial_num', '__min_key_nbits')
     
     def __init__(self):
         """Create certificate authority instance"""
         self.__cert = None
         self.__key = None
         self.__serial_num = 0L
+        self.__min_key_nbits = 1024
+
+
+    @classmethod
+    def from_config(cls, cfg, **kw):
+        '''Alternative constructor makes object from config file settings
+        @type cfg: basestring / ConfigParser derived type
+        @param cfg: configuration file path or ConfigParser type object
+        @rtype: ndg.saml.saml2.binding.soap.client.SOAPBinding or derived type
+        @return: new instance of this class
+        '''
+        obj = cls()
+        obj.parse_config(cfg, **kw)
+        
+        return obj
+
+    def parse_config(self, cfg, prefix='', section='DEFAULT'):
+        '''Read config file settings
+        @type cfg: basestring /ConfigParser derived type
+        @param cfg: configuration file path or ConfigParser type object
+        @type prefix: basestring
+        @param prefix: prefix for option names e.g. "attributeQuery."
+        @type section: baestring
+        @param section: configuration file section from which to extract
+        parameters.
+        '''  
+        if isinstance(cfg, basestring):
+            config_file_path = path.expandvars(cfg)
+            here_dir = path.dirname(config_file_path)
+            _cfg = SafeConfigParser(defaults=dict(here=here_dir))
+            _cfg.optionxform = str
+
+            _cfg.read(config_file_path)
+            
+        elif isinstance(cfg, ConfigParser):
+            _cfg = cfg   
+        else:
+            raise AttributeError('Expecting basestring or ConfigParser type '
+                                 'for "cfg" attribute; got %r type' % type(cfg))
+        
+        # Get items for this section as a dictionary so that parseKeywords can
+        # used to update the object
+        kw = dict(_cfg.items(section))
+        if 'prefix' not in kw and prefix:
+            kw['prefix'] = prefix
+            
+        self.parse_keywords(**kw)
+        
+    def parse_keywords(self, prefix='', **kw):
+        """Update object from input keywords
+        
+        @type prefix: basestring
+        @param prefix: if a prefix is given, only update self from kw items 
+        where keyword starts with this prefix
+        @type kw: dict
+        @param kw: items corresponding to class instance variables to 
+        update.  Keyword names must match their equivalent class instance 
+        variable names.  However, they may prefixed with <prefix>
+        """
+        prefixLen = len(prefix)
+        for optName, val in kw.items():
+            if prefix:
+                # Filter attributes based on prefix
+                if optName.startswith(prefix):
+                    setattr(self, optName[prefixLen:], val)
+            else:
+                # No prefix set - attempt to set all attributes   
+                setattr(self, optName, val)
+                
+    @classmethod
+    def from_keywords(cls, prefix='', **kw):
+        """Create a new instance initialising instance variables from the 
+        keyword inputs
+        @type prefix: basestring
+        @param prefix: if a prefix is given, only update self from kw items 
+        where keyword starts with this prefix
+        @type kw: dict
+        @param kw: items corresponding to class instance variables to 
+        update.  Keyword names must match their equivalent class instance 
+        variable names.  However, they may prefixed with <prefix>
+        @return: new instance of this class
+        @rtype: ndg.saml.saml2.binding.soap.client.SOAPBinding or derived type
+        """
+        obj = cls()
+        obj.from_keywords(prefix=prefix, **kw)
+        
+        return obj
 
     @property
     def cert(self):
@@ -96,17 +202,29 @@ class CertificateAuthority(object):
         self.__key = value
         
     @property
-    def serial_num(self):
+    def serial_num_counter(self):
         """Certificate serial number"""
         return self.__serial_num
 
-    @serial_num.setter
-    def serial_num(self, value):
+    @serial_num_counter.setter
+    def serial_num_counter(self, value):
         if not isinstance(value, (long, int)):
-            raise TypeError('Expecting int or long type for "serial_num" '
+            raise TypeError('Expecting int or long type for "serial_num_counter" '
                             'got %r type' % type(value))
         self.__serial_num = long(value)
+        
+    @property
+    def min_key_nbits(self):
+        """Minimum number of bits required for key in certificate request"""
+        return self.__min_key_nbits
 
+    @min_key_nbits.setter
+    def min_key_nbits(self, value):
+        if not isinstance(value, (long, int)):
+            raise TypeError('Expecting int or long type for "min_key_nbits" '
+                            'got %r type' % type(value))
+        self.__min_key_nbits = long(value)
+        
     @classmethod
     def from_files(cls, cert_filepath, key_filepath, key_file_passwd=None):
         """Construct new instance certificate and private key files
@@ -147,8 +265,18 @@ class CertificateAuthority(object):
         @type ca_true: bool
         @return: The signed certificate in an X.509 object
         """
+        
+        # Check number of bits in key
+        pkey = req.get_pubkey()
+        pkey_nbits = pkey.bits()
+        if pkey_nbits < self.min_key_nbits:
+            raise CertificateAuthorityCSRError('Certificate signing request '
+                                               'must use a key with at least '
+                                               '%d bits, input request has a '
+                                               'key with %d bits' % pkey_nbits)
+            
         cert = crypto.X509()
-        cert.set_serial_number(self.serial_num)
+        cert.set_serial_number(self.serial_num_counter)
         
         cert.gmtime_adj_notBefore(not_before_ndays)
         cert.gmtime_adj_notAfter(not_after_ndays)
@@ -165,7 +293,7 @@ class CertificateAuthority(object):
         else:
             basic_constraints = 'CA:false'
             
-        # Add basic contraints as first element of extensions tuple
+        # Add basic constraints as first element of extensions tuple
         extensions = (crypto.X509Extension('basicConstraints', 
                                            True, 
                                            basic_constraints),)
@@ -181,6 +309,12 @@ class CertificateAuthority(object):
         cert.sign(self.key, digest)
         
         # Serial number is a counter
-        self.serial_num += 1
+        self.serial_num_counter += 1
+        
+        if log.isEnabledFor(logging.INFO):
+            dn = ''.join(["/%s=%s" % (k, v) 
+                          for k,v in cert.get_subject().get_components()])
+            
+            log.info('Issuing certificate with subject %s', dn)
         
         return cert 

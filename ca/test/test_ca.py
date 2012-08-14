@@ -3,6 +3,9 @@ Created on Feb 1, 2012
 
 @author: philipkershaw
 '''
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 from os import path
 import unittest
 
@@ -18,8 +21,8 @@ this_dir = path.abspath(path.dirname(__file__))
 
 class CertificateAuthorityTestCase(unittest.TestCase):
     """Test certificate authority class"""
-    ca_cert_filepath = path.join(this_dir, 'cacert.pem')
-    ca_key_filepath = path.join(this_dir, 'cakey.pem')
+    ca_cert_filepath = path.join(this_dir, 'myca.crt')
+    ca_key_filepath = path.join(this_dir, 'myca.key')
     ca_key_file_passwd = 'ndgtestca'
     
     def test01_issue_fqdn_cert_with_subj_alt_names(self):
