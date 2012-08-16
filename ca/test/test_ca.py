@@ -24,19 +24,25 @@ class CertificateAuthorityTestCase(unittest.TestCase):
     ca_cert_filepath = path.join(this_dir, 'myca.crt')
     ca_key_filepath = path.join(this_dir, 'myca.key')
     ca_key_file_passwd = 'ndgtestca'
-    
-    def test01_issue_fqdn_cert_with_subj_alt_names(self):
+
+    def _create_ca_and_cert_req(self):
         key_pair = Utils.create_key_pair()
         
         dn = {'CN': 'localhost', 'O': 'NDG', 'OU': 'Security'}
         cert_req = Utils.create_cert_req(dn, key_pair)
         
-        not_before_ndays = 0
-        not_after_ndays =  60*60*24*365*5
-        
         ca = CertificateAuthority.from_files(self.__class__.ca_cert_filepath, 
                                              self.__class__.ca_key_filepath, 
                                              self.__class__.ca_key_file_passwd)
+        
+        return key_pair, cert_req, ca
+      
+    def test01_issue_fqdn_cert_with_subj_alt_names(self):
+        key_pair, cert_req, ca = self._create_ca_and_cert_req()
+        
+        not_before_ndays = 0
+        not_after_ndays =  60*60*24*365*5
+        
         cert = ca.issue_certificate(cert_req, 
                       (not_before_ndays, not_after_ndays), 
                       subject_alt_name='DNS:localhost, DNS:localhost.domain')
@@ -66,6 +72,23 @@ class CertificateAuthorityTestCase(unittest.TestCase):
                             dec[0].getComponentByPosition(i).getComponent())
                     print dns_name
 
+    def test03_create_from_keywords(self):
+        ca = CertificateAuthority.from_keywords(prefix='ca.')
+        
+    def test04_issue_cert_with_custom_ext(self):
+        key_pair, cert_req, ca = self._create_ca_and_cert_req()
+        
+        not_before_ndays = 0
+        not_after_ndays =  60*60*24*365*5
 
+        cert = ca.issue_certificate(cert_req, 
+                      (not_before_ndays, not_after_ndays), 
+                      extensions=[('nsComment', 'my_cust_val', False)])
+
+        s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, key_pair)
+        open(path.join(this_dir, 'my1.key'), 'w').write(s_key)
+        s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+        open(path.join(this_dir, 'my1.crt'), 'w').write(s_cert)
+        
 if __name__ == "__main__":
     unittest.main()

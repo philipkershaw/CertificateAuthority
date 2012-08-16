@@ -132,6 +132,17 @@ class CertificateAuthority(object):
         # Get items for this section as a dictionary so that parseKeywords can
         # used to update the object
         kw = dict(_cfg.items(section))
+        
+        # ... but first get file path settings which aren't included as 
+        # instance variables
+        cert_filepath_opt = prefix + self.__class__.cert_filepath_optname
+        prikey_filepath_opt = prefix + self.__class__.prikey_filepath_optname
+        prikey_file_passwd_opt = prefix + self.__class__.prikey_passwd_optname
+        
+        cert_filepath = kw.get(cert_filepath_opt)
+        prikey_file_passwd = kw.get(prikey_file_passwd_opt)
+        prikey_filepath = kw.get(prikey_filepath_opt)
+        
         if 'prefix' not in kw and prefix:
             kw['prefix'] = prefix
             
@@ -173,7 +184,7 @@ class CertificateAuthority(object):
         @rtype: ndg.saml.saml2.binding.soap.client.SOAPBinding or derived type
         """
         obj = cls()
-        obj.from_keywords(prefix=prefix, **kw)
+        obj.parse_keywords(prefix=prefix, **kw)
         
         return obj
 
@@ -231,11 +242,11 @@ class CertificateAuthority(object):
         "return: new certificate authority instance
         """
         key = crypto.load_privatekey(crypto.FILETYPE_PEM, 
-                                        open(key_filepath).read(),
-                                        key_file_passwd)
+                                     open(key_filepath).read(),
+                                     key_file_passwd)
         
         cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
-                                          open(cert_filepath).read())
+                                       open(cert_filepath).read())
         
         ca = CertificateAuthority()
         ca.cert = cert
@@ -248,7 +259,8 @@ class CertificateAuthority(object):
                           digest=Utils.message_digest_type,
                           certificate_version=certificate_version3,
                           ca_true=False,
-                          subject_alt_name=False):
+                          subject_alt_name=False,
+                          extensions=None):
         """
         Generate a certificate given a certificate request.
     
@@ -293,18 +305,23 @@ class CertificateAuthority(object):
         else:
             basic_constraints = 'CA:false'
             
-        # Add basic constraints as first element of extensions tuple
-        extensions = (crypto.X509Extension('basicConstraints', 
-                                           True, 
-                                           basic_constraints),)
+        # Add basic constraints as first element of extensions list
+        basic_constraints_ext = crypto.X509Extension('basicConstraints', 
+                                                     True, 
+                                                     basic_constraints)
+        x509_extensions = [basic_constraints_ext]
             
         # Check for a subject alt names extension, if present add as is.
         if isinstance(subject_alt_name, basestring):
-            extensions += (crypto.X509Extension('subjectAltName', 
-                                                False, 
-                                                subject_alt_name),)
+            subject_alt_name_ext = crypto.X509Extension('subjectAltName', 
+                                                        False, 
+                                                        subject_alt_name)
+            x509_extensions.append(subject_alt_name_ext)
             
-        cert.add_extensions(extensions)
+        if extensions:
+            x509_extensions += self._add_certificate_ext(cert, extensions)
+            
+        cert.add_extensions(x509_extensions)
         
         cert.sign(self.key, digest)
         
@@ -318,3 +335,16 @@ class CertificateAuthority(object):
             log.info('Issuing certificate with subject %s', dn)
         
         return cert 
+    
+    def _add_certificate_ext(self, cert, extensions):
+        """Add certificate extension - derived classes can override to customise
+        behaviour
+        """
+
+        x509_extensions = []
+        for ext_name, ext_val, ext_crit in extensions:
+            x509_cust_ext = crypto.X509Extension(ext_name, ext_crit, str(ext_val))
+            x509_extensions.append(x509_cust_ext)
+            
+        return x509_extensions
+
