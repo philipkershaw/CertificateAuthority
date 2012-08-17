@@ -74,6 +74,7 @@ class CertificateAuthorityTestCase(unittest.TestCase):
 
     def test03_create_from_keywords(self):
         ca = CertificateAuthority.from_keywords(prefix='ca.')
+        self.assert_(ca, 'null ca object')
         
     def test04_issue_cert_with_custom_ext(self):
         key_pair, cert_req, ca = self._create_ca_and_cert_req()
