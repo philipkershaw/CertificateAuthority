@@ -24,6 +24,7 @@ class CertificateAuthorityTestCase(unittest.TestCase):
     ca_cert_filepath = path.join(this_dir, 'myca.crt')
     ca_key_filepath = path.join(this_dir, 'myca.key')
     ca_key_file_passwd = 'ndgtestca'
+    cfg_filepath = path.join(this_dir, 'ca.cfg')
 
     def _create_ca_and_cert_req(self):
         key_pair = Utils.create_key_pair()
@@ -73,10 +74,30 @@ class CertificateAuthorityTestCase(unittest.TestCase):
                     print dns_name
 
     def test03_create_from_keywords(self):
-        ca = CertificateAuthority.from_keywords(prefix='ca.')
+        ca = CertificateAuthority.from_keywords(serial_num_counter=11)
         self.assert_(ca, 'null ca object')
+        self.assertEqual(ca.serial_num_counter, 11, 
+                         'Error setting serial_num_counter')
         
-    def test04_issue_cert_with_custom_ext(self):
+    def test04_create_from_files(self):
+        ca = CertificateAuthority.from_files(self.__class__.ca_cert_filepath, 
+                            self.__class__.ca_key_filepath, 
+                            key_file_passwd=self.__class__.ca_key_file_passwd)
+        self.assert_(ca, 'null ca object')
+        self.assertIsInstance(ca.cert, crypto.X509, 
+                              'ca.cert is not an X509 instance')
+        self.assertIsInstance(ca.key, crypto.PKey, 
+                              'ca.key is not an PKey instance')
+        
+    def test05_create_from_config(self):
+        ca = CertificateAuthority.from_config(self.__class__.cfg_filepath)
+        self.assert_(ca, 'null ca object')
+        self.assertIsInstance(ca.cert, crypto.X509, 
+                              'ca.cert is not an X509 instance')
+        self.assertIsInstance(ca.key, crypto.PKey, 
+                              'ca.key is not an PKey instance')
+        
+    def test06_issue_cert_with_custom_ext(self):
         key_pair, cert_req, ca = self._create_ca_and_cert_req()
         
         not_before_ndays = 0
@@ -90,6 +111,7 @@ class CertificateAuthorityTestCase(unittest.TestCase):
         open(path.join(this_dir, 'my1.key'), 'w').write(s_key)
         s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
         open(path.join(this_dir, 'my1.crt'), 'w').write(s_cert)
+        
         
 if __name__ == "__main__":
     unittest.main()

@@ -73,15 +73,26 @@ class Utils(object):
         return cert_req
 
 
-class CertificateAuthorityCSRError(Exception):
+class CertificateAuthorityError(Exception):
+    """Base class for exceptions for CertificateAuthority class"""
+    
+    
+class CertificateAuthorityCSRError(CertificateAuthorityError):
     """Error with input certificate signing request"""
+    
+    
+class CertificateAuthorityConfigError(CertificateAuthorityError):
+    """Error reading options from config file"""
     
     
 class CertificateAuthority(object):
     """Provide basic functionality for a Certificate Authority"""
     certificate_version2 = 1
     certificate_version3 = 2
-    
+    cert_filepath_optname = "cert_filepath"
+    prikey_filepath_optname = "key_filepath"
+    prikey_passwd_optname = "key_passwd"
+        
     __slots__ = ('__cert', '__key', '__serial_num', '__min_key_nbits')
     
     def __init__(self):
@@ -90,7 +101,6 @@ class CertificateAuthority(object):
         self.__key = None
         self.__serial_num = 0L
         self.__min_key_nbits = 1024
-
 
     @classmethod
     def from_config(cls, cfg, **kw):
@@ -139,13 +149,32 @@ class CertificateAuthority(object):
         prikey_filepath_opt = prefix + self.__class__.prikey_filepath_optname
         prikey_file_passwd_opt = prefix + self.__class__.prikey_passwd_optname
         
-        cert_filepath = kw.get(cert_filepath_opt)
+        try:
+            cert_filepath = kw[cert_filepath_opt]
+            prikey_filepath = kw[prikey_filepath_opt]
+            
+        except KeyError, e:
+            raise CertificateAuthorityConfigError('Missing option from config '
+                                                  '%s' % str(e))
+
+        # Password does not need to be set and can default to None
         prikey_file_passwd = kw.get(prikey_file_passwd_opt)
-        prikey_filepath = kw.get(prikey_filepath_opt)
+            
+        # Set 'cert' and 'key' attributes from equivalent files
+        self.parse_files(cert_filepath, prikey_filepath, 
+                         key_file_passwd=prikey_file_passwd)
         
+        # Take prefix setting from config if set otherwise default to input
+        # setting made to this method
         if 'prefix' not in kw and prefix:
             kw['prefix'] = prefix
-            
+        
+        # Prune cert and key settings as these can be intelligently read from
+        # a config file
+        for key in ('cert', 'key', 'cert_filepath', 'key_filepath', 'key_passwd'):
+            if key in kw:
+                del key
+                    
         self.parse_keywords(**kw)
         
     def parse_keywords(self, prefix='', **kw):
@@ -187,7 +216,29 @@ class CertificateAuthority(object):
         obj.parse_keywords(prefix=prefix, **kw)
         
         return obj
+        
+    def parse_files(self, cert_filepath, key_filepath, key_file_passwd=None):
+        """Read certificate and private key files setting instance variables
+        """
+        self.key = crypto.load_privatekey(crypto.FILETYPE_PEM, 
+                                     open(key_filepath).read(),
+                                     key_file_passwd)
+        
+        self.cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
+                                       open(cert_filepath).read())
 
+        
+    @classmethod
+    def from_files(cls, cert_filepath, key_filepath, key_file_passwd=None):
+        """Construct new instance certificate and private key files
+        @return: new certificate authority instance
+        """
+        ca = cls()
+        ca.parse_files(cert_filepath, key_filepath, 
+                       key_file_passwd=key_file_passwd)
+        
+        return ca
+    
     @property
     def cert(self):
         return self.__cert
@@ -235,23 +286,6 @@ class CertificateAuthority(object):
             raise TypeError('Expecting int or long type for "min_key_nbits" '
                             'got %r type' % type(value))
         self.__min_key_nbits = long(value)
-        
-    @classmethod
-    def from_files(cls, cert_filepath, key_filepath, key_file_passwd=None):
-        """Construct new instance certificate and private key files
-        "return: new certificate authority instance
-        """
-        key = crypto.load_privatekey(crypto.FILETYPE_PEM, 
-                                     open(key_filepath).read(),
-                                     key_file_passwd)
-        
-        cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
-                                       open(cert_filepath).read())
-        
-        ca = CertificateAuthority()
-        ca.cert = cert
-        ca.key = key
-        return ca
     
     def issue_certificate(self, 
                           req, 
