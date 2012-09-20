@@ -16,8 +16,9 @@ def gen_ca_cert(dn):
     ca_cert.set_serial_number(1)
     subj = ca_cert.get_subject()
     for k, v in dn.items():
-            setattr(subj, k, v)
-            ca_cert.gmtime_adj_notBefore(0)
+        setattr(subj, k, v)
+        
+    ca_cert.gmtime_adj_notBefore(0)       
     ca_cert.gmtime_adj_notAfter(24 * 60 * 60)
     ca_cert.set_issuer(ca_cert.get_subject())
     ca_cert.set_pubkey(ca_key)
@@ -45,8 +46,8 @@ if __name__ == "__main__":
         cakey_filepath = path.join(this_dir, 'myca.key')
         cacert_filepath = path.join(this_dir, 'myca.crt')
     
-    dn = dn = {'CN': 'NDG Test CA', 'O': 'NDG', 'OU': 'Security'}
-    key_pair, cert = gen_ca_cert()
+    dn = {'CN': 'NDG Test CA', 'O': 'NDG', 'OU': 'Security'}
+    key_pair, cert = gen_ca_cert(dn)
     
     s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, key_pair)
     open(cakey_filepath, 'w').write(s_key)
