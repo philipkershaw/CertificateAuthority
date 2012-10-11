@@ -8,6 +8,8 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id: $"
 import unittest
 from os import path
+from os import urandom
+import base64
 
 from ca.cert_req import CertReqUtils
 
@@ -22,10 +24,12 @@ class CertificateAuthorityBaseTestCase(unittest.TestCase):
     CERT_AUTHORITY_CLASS = None
     
     @classmethod
-    def create_cert_req(cls):
+    def create_cert_req(cls, dn=None):
         key_pair = CertReqUtils.create_key_pair()
         
-        dn = {'CN': 'localhost', 'O': 'NDG', 'OU': 'Security'}
+        if dn is None:
+            dn = {'CN': 'localhost', 'O': 'NDG', 'OU': 'Security'}
+            
         cert_req = CertReqUtils.create_cert_req(dn, key_pair)
         
         return key_pair, cert_req

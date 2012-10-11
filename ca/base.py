@@ -31,7 +31,7 @@ class AbstractCertificateAuthority(object):
     PRIKEY_FILEPATH_OPTNAME = "key_filepath"
     PRIKEY_PASSWD_OPTNAME = "key_passwd"
     SERIAL_NUM_DEFAULT = 0L
-    MIN_KEY_NBITS_DEFAULT = 1024
+    MIN_KEY_NBITS_DEFAULT = 2048
     
     __metaclass__ = ABCMeta
     __slots__ = (

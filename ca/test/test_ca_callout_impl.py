@@ -11,7 +11,9 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
 import logging
 logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger(__name__)
 import unittest
+import uuid
 from os import path
 
 from OpenSSL import crypto
@@ -66,12 +68,14 @@ class CertificateAuthorityWithCalloutTestCase(CertificateAuthorityBaseTestCase):
         self.assert_(ca.cert_issue_cmd, 'Missing openssl issuing command')
     
     def test04_issue_certificate(self):
-        cert_req = self.__class__.create_cert_req()[-1]
+        # Use random dn to avoid error overwriting existing entry in the db
+        dn = {'CN': uuid.uuid4(), 'O': 'NDG', 'OU': 'Security'}
+        cert_req = self.__class__.create_cert_req(dn)[-1]
         ca = CertificateAuthorityWithCallout.from_config(
                                                 self.__class__.CFG_FILEPATH)
         cert = ca.issue_certificate(cert_req)
         self.assert_(cert, 'Null output certificate')
-
+        log.debug('Issued new certificate: %r', cert.get_subject())
 
 if __name__ == "__main__":
     unittest.main()

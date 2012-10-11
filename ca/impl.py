@@ -22,11 +22,111 @@ class CertificateAuthorityCSRError(CertificateAuthorityError):
 class CertificateAuthority(AbstractCertificateAuthority):
     '''Certificate Authority implementation entirely based on PyOpenSSL bindings
     '''
+    DEFAULT_NOT_BEFORE_TIME = 0
+    DEFAULT_NOT_AFTER_TIME = 60*60*24*365*3 # 3 years
     
+    __slots__ = (
+        '__not_before_time_nsecs',
+        '__not_after_time_nsecs',
+        '__digest',
+        '__certificate_version',
+        '__ca_true',
+        '__subject_alt_name'
+    )
+    def __init__(self):
+        super(CertificateAuthority, self).__init__()
+        
+        self.__not_before_time_nsecs = self.__class__.DEFAULT_NOT_BEFORE_TIME 
+        self.__not_after_time_nsecs = self.__class__.DEFAULT_NOT_AFTER_TIME 
+        self.__digest = CertReqUtils.MESSAGE_DIGEST_TYPE_DEFAULT
+        self.__certificate_version = self.__class__.CERTIFICATE_VERSION3
+        self.__ca_true = False
+        self.__subject_alt_name = False
+        
+    @property
+    def not_before_time_nsecs(self):
+        """Default not before time in seconds for certs issued"""
+        return self.__not_before_time_nsecs
+
+    @not_before_time_nsecs.setter
+    def not_before_time_nsecs(self, value):
+        if not isinstance(value, (long, int)):
+            raise TypeError('Expecting int or long type for '
+                            '"not_before_time_nsecs" got %r type' % type(value))
+        self.__not_before_time_nsecs = long(value)
+        
+    @property
+    def not_after_time_nsecs(self):
+        """Default not after time in seconds for certs issued"""
+        return self.__not_after_time_nsecs
+
+    @not_after_time_nsecs.setter
+    def not_after_time_nsecs(self, value):
+        if not isinstance(value, (long, int)):
+            raise TypeError('Expecting int or long type for '
+                            '"not_after_time_nsecs" got %r type' % type(value))
+        self.__not_after_time_nsecs = long(value)
+  
+    @property
+    def digest(self):
+        return self.__digest
+    
+    @digest.setter
+    def digest(self, value):
+        if not isinstance(value, basestring):
+            raise TypeError('Expecting string type for "digest" '
+                            'got %r type' % type(value))
+        self.__digest = value
+  
+    @property
+    def certificate_version(self):
+        return self.__certificate_version
+    
+    @certificate_version.setter
+    def certificate_version(self, value):
+        if not isinstance(value, basestring):
+            raise TypeError('Expecting string type for "certificate_version" '
+                            'got %r type' % type(value))
+        self.__certificate_version = value
+                        
+    @property
+    def ca_true(self):
+        """Set to true to issue *CA* certificates by default"""
+        return self.__ca_true
+
+    @ca_true.setter
+    def ca_true(self, value):
+        if isinstance(value, basestring):
+            self.__ca_true = value.lower() in ('1', 'true')
+            
+        elif isinstance(value, (long, int)):
+            self.__ca_true = long(value)
+        else:
+            raise TypeError('Expecting int or long type for '
+                            '"ca_true" got %r type' % type(value))
+        
+    @property
+    def subject_alt_name(self):
+        """Set to true to set subject alt name in certificates by default"""
+        return self.__subject_alt_name
+
+    @subject_alt_name.setter
+    def subject_alt_name(self, value):
+        if isinstance(value, basestring):
+            self.__subject_alt_name = value.lower() in ('1', 'true')
+            
+        elif isinstance(value, (long, int)):
+            self.__subject_alt_name = long(value)
+        else:
+            raise TypeError('Expecting int or long type for '
+                            '"ca_true" got %r type' % type(value))        
+                
     def issue_certificate(
         self, 
-        cert_req, 
-        (not_before_ndays, not_after_ndays), 
+        cert_req,
+        subject_name=None, 
+        not_before_time_nsecs=DEFAULT_NOT_BEFORE_TIME, 
+        not_after_time_nsecs=DEFAULT_NOT_AFTER_TIME, 
         digest=CertReqUtils.MESSAGE_DIGEST_TYPE_DEFAULT,
         certificate_version=AbstractCertificateAuthority.CERTIFICATE_VERSION3,
         ca_true=False,
@@ -36,12 +136,15 @@ class CertificateAuthority(AbstractCertificateAuthority):
         Generate a certificate given a certificate request.
     
         @param cert_req: Certificate request to use
-        @param not_before_ndays: Timestamp (relative to now) when the 
+        @param not_before_time_nsecs: Timestamp (relative to now) when the 
         certificate starts being valid
-        @type not_before_ndays: int or long
-        @param not_after_ndays: Timestamp (relative to now) when the certificate
+        @param subject_name: set alternate subject name to one specified in the
+        certificate request
+        @type subject_name: OpenSSL.crypto.X509Name
+        @type not_before_time_nsecs: int or long
+        @param not_after_time_nsecs: Timestamp (relative to now) when the certificate
         stops being valid
-        @type not_after_ndays: int or long
+        @type not_after_time_nsecs: int or long
         @param digest: Digest method to use for signing, default is md5
         @param ca_true: set to True to set CA:true in the basic constraints 
         extension
@@ -66,10 +169,13 @@ class CertificateAuthority(AbstractCertificateAuthority):
         
         cert.set_serial_number(self.serial_num_counter)
         
-        cert.gmtime_adj_notBefore(not_before_ndays)
-        cert.gmtime_adj_notAfter(not_after_ndays)
+        cert.gmtime_adj_notBefore(not_before_time_nsecs)
+        cert.gmtime_adj_notAfter(not_after_time_nsecs)
         
-        cert.set_issuer(self.cert.get_subject())
+        if subject_name is None:
+            subject_name = self.cert.get_subject()
+            
+        cert.set_issuer(subject_name)
         cert.set_subject(cert_req.get_subject())
         cert.set_pubkey(cert_req.get_pubkey())
         
