@@ -95,7 +95,7 @@ class AbstractCertificateAuthority(object):
             raise AttributeError('Expecting basestring or ConfigParser type '
                                  'for "cfg" attribute; got %r type' % type(cfg))
                         
-        # Get items for this section as a dictionary so that parseKeywords can
+        # Get items for this section as a dictionary so that parse_keywords can
         # used to update the object
         kw = dict([(opt_name, val) for opt_name, val in _cfg.items(section)
                    if opt_name != 'here'])
@@ -147,16 +147,16 @@ class AbstractCertificateAuthority(object):
         @param kw: items corresponding to class instance variables to 
         update.  Keyword names must match their equivalent class instance 
         variable names.  However, they may prefixed with <prefix>
-        """
-        prefixLen = len(prefix)
-        for optName, val in kw.items():
+        """        
+        prefix_len = len(prefix)
+        for opt_name, val in kw.items():
             if prefix:
                 # Filter attributes based on prefix
-                if optName.startswith(prefix):
-                    setattr(self, optName[prefixLen:], val)
+                if opt_name.startswith(prefix):
+                    setattr(self, opt_name[prefix_len:], val)
             else:
                 # No prefix set - attempt to set all attributes   
-                setattr(self, optName, val)
+                setattr(self, opt_name, val)
                 
     @classmethod
     def from_keywords(cls, prefix='', **kw):
@@ -170,9 +170,34 @@ class AbstractCertificateAuthority(object):
         update.  Keyword names must match their equivalent class instance 
         variable names.  However, they may prefixed with <prefix>
         @return: new instance of this class
-        @rtype: ndg.saml.saml2.binding.soap.client.SOAPBinding or derived type
+        @rtype: ca.base.AbstractCertificateAuthority derived type
         """
         obj = cls()
+        
+        # ... but first get file path settings which aren't included as 
+        # instance variables
+        cert_filepath_opt = prefix + cls.CERT_FILEPATH_OPTNAME
+        prikey_filepath_opt = prefix + cls.PRIKEY_FILEPATH_OPTNAME
+        prikey_file_passwd_opt = prefix + cls.PRIKEY_PASSWD_OPTNAME
+        
+        cert_filepath = kw.pop(cert_filepath_opt, None)
+        if cert_filepath is None and 'cert' not in kw:
+            raise CertificateAuthorityConfigError(
+                    "No 'cert' or %r option set" % cls.CERT_FILEPATH_OPTNAME)
+   
+        prikey_filepath = kw.pop(prikey_filepath_opt, None)
+        if prikey_filepath is None and 'key' not in kw:
+            raise CertificateAuthorityConfigError(
+                    "No 'key' or %r option set" % cls.PRIKEY_FILEPATH_OPTNAME)
+            
+        # Password does not need to be set and can default to None
+        prikey_file_passwd = kw.pop(prikey_file_passwd_opt, None)
+            
+        # Set 'cert' and 'key' attributes from equivalent files
+        if cert_filepath and prikey_filepath:
+            obj.parse_files(cert_filepath, prikey_filepath, 
+                            key_file_passwd=prikey_file_passwd)
+
         obj.parse_keywords(prefix=prefix, **kw)
         
         return obj
@@ -180,9 +205,11 @@ class AbstractCertificateAuthority(object):
     def parse_files(self, cert_filepath, key_filepath, key_file_passwd=None):
         """Read certificate and private key files setting instance variables
         """
-        self.key = crypto.load_privatekey(crypto.FILETYPE_PEM, 
-                                          open(key_filepath).read(),
-                                          key_file_passwd)
+        args = crypto.FILETYPE_PEM, open(key_filepath).read()
+        if key_file_passwd:
+            args += (key_file_passwd, )
+            
+        self.key = crypto.load_privatekey(*args)
         
         self.cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
                                             open(cert_filepath).read())

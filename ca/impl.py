@@ -171,12 +171,13 @@ class CertificateAuthority(AbstractCertificateAuthority):
         
         cert.gmtime_adj_notBefore(not_before_time_nsecs)
         cert.gmtime_adj_notAfter(not_after_time_nsecs)
+
+        cert.set_issuer(self.cert.get_subject())
         
         if subject_name is None:
-            subject_name = self.cert.get_subject()
+            subject_name = self.cert_req.get_subject()
             
-        cert.set_issuer(subject_name)
-        cert.set_subject(cert_req.get_subject())
+        cert.set_subject(subject_name)
         cert.set_pubkey(cert_req.get_pubkey())
         
         cert.set_version(certificate_version)
