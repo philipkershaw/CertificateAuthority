@@ -18,8 +18,8 @@ from os import path
 
 from OpenSSL import crypto
 
-from ca.callout_impl import CertificateAuthorityWithCallout
-from ca.test import CertificateAuthorityBaseTestCase, THIS_DIR
+from contrail.security.ca.callout_impl import CertificateAuthorityWithCallout
+from contrail.security.ca.test import CertificateAuthorityBaseTestCase, THIS_DIR
 
 
 class CertificateAuthorityWithCalloutTestCase(CertificateAuthorityBaseTestCase):
@@ -35,8 +35,11 @@ class CertificateAuthorityWithCalloutTestCase(CertificateAuthorityBaseTestCase):
         )
 
         ca = CertificateAuthorityWithCallout.from_keywords(
-                                                min_key_nbits=4096,
-                                                cert_issue_cmd=cert_issue_cmd)
+                            min_key_nbits=4096,
+                            cert_filepath=self.__class__.CA_CERT_FILEPATH, 
+                            key_filepath=self.__class__.CA_KEY_FILEPATH, 
+                            key_passwd=self.__class__.CA_KEY_FILE_PASSWD,
+                            cert_issue_cmd=cert_issue_cmd)
         self.assert_(ca, 'null ca object')
         
         self.assertEqual(ca.min_key_nbits, 4096, 
@@ -44,6 +47,10 @@ class CertificateAuthorityWithCalloutTestCase(CertificateAuthorityBaseTestCase):
         
         self.assertRaises(TypeError, 
                           CertificateAuthorityWithCallout.from_keywords,
+                          cert_filepath=self.__class__.CA_CERT_FILEPATH, 
+                          key_filepath=self.__class__.CA_KEY_FILEPATH, 
+                          key_passwd=self.__class__.CA_KEY_FILE_PASSWD,
+                          cert_issue_cmd=cert_issue_cmd,
                           min_key_nbits=None)
         
     def test02_create_from_files(self):
@@ -69,7 +76,7 @@ class CertificateAuthorityWithCalloutTestCase(CertificateAuthorityBaseTestCase):
     
     def test04_issue_certificate(self):
         # Use random dn to avoid error overwriting existing entry in the db
-        dn = {'CN': uuid.uuid4(), 'O': 'NDG', 'OU': 'Security'}
+        dn = {'CN': str(uuid.uuid4()), 'O': 'NDG', 'OU': 'Security'}
         cert_req = self.__class__.create_cert_req(dn)[-1]
         ca = CertificateAuthorityWithCallout.from_config(
                                                 self.__class__.CFG_FILEPATH)

@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
     
 from OpenSSL import crypto
 
-from ca.base import AbstractCertificateAuthority
+from contrail.security.ca.base import AbstractCertificateAuthority
 
 
 class CertificateAuthorityWithCallout(AbstractCertificateAuthority):

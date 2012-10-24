@@ -11,7 +11,7 @@ from os import path
 from os import urandom
 import base64
 
-from ca.cert_req import CertReqUtils
+from contrail.security.ca.cert_req import CertReqUtils
 
 THIS_DIR = path.abspath(path.dirname(__file__))
 
@@ -22,6 +22,7 @@ class CertificateAuthorityBaseTestCase(unittest.TestCase):
     CA_KEY_FILEPATH = path.join(THIS_DIR, 'myca.key')
     CA_KEY_FILE_PASSWD = 'ndgtestca'
     CERT_AUTHORITY_CLASS = None
+    MIN_KEY_NBITS = 1024
     
     @classmethod
     def create_cert_req(cls, dn=None):
@@ -40,5 +41,6 @@ class CertificateAuthorityBaseTestCase(unittest.TestCase):
         ca = cls.CERT_AUTHORITY_CLASS.from_files(cls.CA_CERT_FILEPATH, 
                                                  cls.CA_KEY_FILEPATH, 
                                                  cls.CA_KEY_FILE_PASSWD)
+        ca.min_key_nbits = cls.MIN_KEY_NBITS
         
         return key_pair, cert_req, ca

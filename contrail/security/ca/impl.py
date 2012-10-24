@@ -11,8 +11,9 @@ log = logging.getLogger(__name__)
     
 from OpenSSL import crypto
 
-from ca.base import AbstractCertificateAuthority, CertificateAuthorityError
-from ca.cert_req import CertReqUtils
+from contrail.security.ca.cert_req import CertReqUtils
+from contrail.security.ca.base import (AbstractCertificateAuthority, 
+                                       CertificateAuthorityError)
 
 
 class CertificateAuthorityCSRError(CertificateAuthorityError):
@@ -159,7 +160,8 @@ class CertificateAuthority(AbstractCertificateAuthority):
             raise CertificateAuthorityCSRError('Certificate signing request '
                                                'must use a key with at least '
                                                '%d bits, input request has a '
-                                               'key with %d bits' % pkey_nbits)
+                                               'key with %d bits' % 
+                                               (self.min_key_nbits, pkey_nbits))
         
         cert = crypto.X509()
         
@@ -175,7 +177,7 @@ class CertificateAuthority(AbstractCertificateAuthority):
         cert.set_issuer(self.cert.get_subject())
         
         if subject_name is None:
-            subject_name = self.cert_req.get_subject()
+            subject_name = cert_req.get_subject()
             
         cert.set_subject(subject_name)
         cert.set_pubkey(cert_req.get_pubkey())
