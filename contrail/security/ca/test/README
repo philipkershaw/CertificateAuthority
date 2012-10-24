@@ -1,0 +1,9 @@
+Unit test directory.
+ * gen_ca_cert.py: a test script to generate a new key pair and self-signed
+ certificate to make a CA.
+ * test_ca_impl.py: tests CA implementation based on PyOpenSSL.  It uses the 
+ config file ca.cfg.  This sets which CA cert and private key files to use.
+ * test_ca_callout_impl.py: tests CA implementation with callout to openssl
+ command line.  This uses the config files in the test-ca/ directory.
+ callout_ca.cfg is a top-level config file specifying the CA cert and private
+ key and the openssl command to execute when issuing certs.
