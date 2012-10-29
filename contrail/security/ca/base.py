@@ -23,6 +23,10 @@ class CertificateAuthorityConfigError(CertificateAuthorityError):
     """Error reading options from config file"""
     
     
+class CertificateIssuingError(CertificateAuthorityError):
+    """Error issuing a certificate"""
+    
+    
 class AbstractCertificateAuthority(object):
     """Provide basic functionality for a Certificate Authority"""
     CERTIFICATE_VERSION2 = 1

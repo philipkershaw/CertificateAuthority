@@ -14,12 +14,15 @@ logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 import unittest
 import uuid
-from os import path
+from os import path, environ
 
 from OpenSSL import crypto
 
 from contrail.security.ca.callout_impl import CertificateAuthorityWithCallout
 from contrail.security.ca.test import CertificateAuthorityBaseTestCase, THIS_DIR
+
+# Configure environment for openssl config file - see ./test-ca/test-ca.cfg
+environ['CONTRAIL_CA_TEST_DIR'] = THIS_DIR
 
 
 class CertificateAuthorityWithCalloutTestCase(CertificateAuthorityBaseTestCase):
@@ -28,11 +31,12 @@ class CertificateAuthorityWithCalloutTestCase(CertificateAuthorityBaseTestCase):
     CFG_FILEPATH = path.join(THIS_DIR, 'callout_ca.cfg')
 
     def test01_create_from_keywords(self):
+        test_ca_cfg_filepath = path.join(THIS_DIR, 'test-ca', 'test-ca.cfg')
         cert_issue_cmd = (
             'openssl ca -key file.key -cert file.crt -config '
-            './test-ca/test-ca.cfg -days 365 -in $in_csr -out $out_cert '
+            '%s -days 365 -in $in_csr -out $out_cert '
             '-batch'
-        )
+        ) % test_ca_cfg_filepath
 
         ca = CertificateAuthorityWithCallout.from_keywords(
                             min_key_nbits=4096,
@@ -83,6 +87,7 @@ class CertificateAuthorityWithCalloutTestCase(CertificateAuthorityBaseTestCase):
         cert = ca.issue_certificate(cert_req)
         self.assert_(cert, 'Null output certificate')
         log.debug('Issued new certificate: %r', cert.get_subject())
+
 
 if __name__ == "__main__":
     unittest.main()

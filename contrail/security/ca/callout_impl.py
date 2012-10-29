@@ -15,7 +15,8 @@ log = logging.getLogger(__name__)
     
 from OpenSSL import crypto
 
-from contrail.security.ca.base import AbstractCertificateAuthority
+from contrail.security.ca.base import (AbstractCertificateAuthority,
+                                       CertificateIssuingError)
 
 
 class CertificateAuthorityWithCallout(AbstractCertificateAuthority):
@@ -58,23 +59,33 @@ class CertificateAuthorityWithCallout(AbstractCertificateAuthority):
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
     
-            stdoutdata, stderrdata = proc.communicate()
-            if stdoutdata:
-                log.info('stdout message: \'%s\'; for command: %r', 
-                         stdoutdata,
-                         populated_cmd)
-            
-            if stderrdata:
-                log.info('stderr message: \'%s\'; for command: %r', 
-                          stderrdata,
-                          populated_cmd)
-            
+            stdoutdata, stderrdata = proc.communicate()           
             if proc.returncode == 0:
+                if stdoutdata:
+                    log.info('stdout message: \'%s\'; for command: %r', 
+                             stdoutdata,
+                             populated_cmd)
+            
+                if stderrdata:
+                    log.info('stderr message: \'%s\'; for command: %r', 
+                              stderrdata,
+                              populated_cmd)
+ 
                 out_cert = crypto.load_certificate(
                                                crypto.FILETYPE_PEM, 
                                                open(out_cert_file.name).read())
             else:
-                out_cert = None
+                error_msg = ''
+                if stdoutdata:
+                    error_msg += ('stdout message: \'%s\'; for command: %r' %
+                                                (stdoutdata, populated_cmd))
+            
+                if stderrdata:
+                    error_msg += ('stderr message: \'%s\'; for command: %r' % 
+                                                (stderrdata, populated_cmd))
+                    
+                raise CertificateIssuingError('Error issuing certificate: %s' %
+                                              error_msg)
         finally:
             os.unlink(in_csr_file.name)
             os.unlink(out_cert_file.name)
