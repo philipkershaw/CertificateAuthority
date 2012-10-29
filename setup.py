@@ -60,7 +60,7 @@ Examples are contained in ``contrail.security.ca.test``.
         'contrail.security.ca.test': [
             'README', '*.cfg', '*.crt', '*.key',
             'test-ca/serial', 'test-ca/index.txt', 'test-ca/newcerts/',
-            'test-ca/*.crt', 'test-ca/*.key'
+            'test-ca/*.crt', 'test-ca/*.key', 'test-ca/test-ca.cfg'
             ]
     },
     classifiers = [
