@@ -59,8 +59,9 @@ Examples are contained in ``contrail.security.ca.test``.
     package_data =      {
         'contrail.security.ca.test': [
             'README', '*.cfg', '*.crt', '*.key',
-            'ca_config/serial', 'ca_config/index.txt', 'ca_config/newcerts/',
-            'ca_config/*.crt', 'ca_config/*.key', 'ca_config/ca_config.cfg'
+            'ca_config/serial', 'ca_config/index.txt', 
+            'ca_config/newcerts/README', 'ca_config/*.crt', 'ca_config/*.key', 
+            'ca_config/test-ca.cfg'
             ]
     },
     classifiers = [
