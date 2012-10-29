@@ -21,7 +21,7 @@ from OpenSSL import crypto
 from contrail.security.ca.callout_impl import CertificateAuthorityWithCallout
 from contrail.security.ca.test import CertificateAuthorityBaseTestCase, THIS_DIR
 
-# Configure environment for openssl config file - see ./test-ca/test-ca.cfg
+# Configure environment for openssl config file - see ./ca_config/ca_config.cfg
 environ['CONTRAIL_CA_TEST_DIR'] = THIS_DIR
 
 
@@ -31,7 +31,7 @@ class CertificateAuthorityWithCalloutTestCase(CertificateAuthorityBaseTestCase):
     CFG_FILEPATH = path.join(THIS_DIR, 'callout_ca.cfg')
 
     def test01_create_from_keywords(self):
-        test_ca_cfg_filepath = path.join(THIS_DIR, 'test-ca', 'test-ca.cfg')
+        test_ca_cfg_filepath = path.join(THIS_DIR, 'ca_config', 'ca_config.cfg')
         cert_issue_cmd = (
             'openssl ca -key file.key -cert file.crt -config '
             '%s -days 365 -in $in_csr -out $out_cert '

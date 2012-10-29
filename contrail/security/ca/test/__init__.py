@@ -18,8 +18,8 @@ THIS_DIR = path.abspath(path.dirname(__file__))
 
 class CertificateAuthorityBaseTestCase(unittest.TestCase):
     """Certificate authority unit test base class"""
-    CA_CERT_FILEPATH = path.join(THIS_DIR, 'test-ca', 'myca.crt')
-    CA_KEY_FILEPATH = path.join(THIS_DIR, 'test-ca', 'myca.key')
+    CA_CERT_FILEPATH = path.join(THIS_DIR, 'ca_config', 'myca.crt')
+    CA_KEY_FILEPATH = path.join(THIS_DIR, 'ca_config', 'myca.key')
     CA_KEY_FILE_PASSWD = 'ndgtestca'
     CERT_AUTHORITY_CLASS = None
     MIN_KEY_NBITS = 1024
