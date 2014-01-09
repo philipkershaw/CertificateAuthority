@@ -51,8 +51,8 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @not_before_time_nsecs.setter
     def not_before_time_nsecs(self, value):
-        if not isinstance(value, (long, int)):
-            raise TypeError('Expecting int or long type for '
+        if not isinstance(value, (long, int, basestring)):
+            raise TypeError('Expecting int, long or string type for '
                             '"not_before_time_nsecs" got %r type' % type(value))
         self.__not_before_time_nsecs = long(value)
         
@@ -63,8 +63,8 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @not_after_time_nsecs.setter
     def not_after_time_nsecs(self, value):
-        if not isinstance(value, (long, int)):
-            raise TypeError('Expecting int or long type for '
+        if not isinstance(value, (long, int, basestring)):
+            raise TypeError('Expecting int, long or string type for '
                             '"not_after_time_nsecs" got %r type' % type(value))
         self.__not_after_time_nsecs = long(value)
   
@@ -126,8 +126,6 @@ class CertificateAuthority(AbstractCertificateAuthority):
         self, 
         cert_req,
         subject_name=None, 
-        not_before_time_nsecs=DEFAULT_NOT_BEFORE_TIME, 
-        not_after_time_nsecs=DEFAULT_NOT_AFTER_TIME, 
         digest=CertReqUtils.MESSAGE_DIGEST_TYPE_DEFAULT,
         certificate_version=AbstractCertificateAuthority.CERTIFICATE_VERSION3,
         ca_true=False,
@@ -142,10 +140,6 @@ class CertificateAuthority(AbstractCertificateAuthority):
         @param subject_name: set alternate subject name to one specified in the
         certificate request
         @type subject_name: OpenSSL.crypto.X509Name
-        @type not_before_time_nsecs: int or long
-        @param not_after_time_nsecs: Timestamp (relative to now) when the certificate
-        stops being valid
-        @type not_after_time_nsecs: int or long
         @param digest: Digest method to use for signing, default is md5
         @param ca_true: set to True to set CA:true in the basic constraints 
         extension
@@ -171,8 +165,8 @@ class CertificateAuthority(AbstractCertificateAuthority):
         
         cert.set_serial_number(self.serial_num_counter)
         
-        cert.gmtime_adj_notBefore(not_before_time_nsecs)
-        cert.gmtime_adj_notAfter(not_after_time_nsecs)
+        cert.gmtime_adj_notBefore(self.not_before_time_nsecs)
+        cert.gmtime_adj_notAfter(self.not_after_time_nsecs)
 
         cert.set_issuer(self.cert.get_subject())
         
