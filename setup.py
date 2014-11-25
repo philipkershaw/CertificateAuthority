@@ -47,7 +47,7 @@ Examples are contained in ``contrail.security.ca.test``.
     author_email =    	'Philip.Kershaw@stfc.ac.uk',
     maintainer =        'Philip Kershaw',
     maintainer_email =  'Philip.Kershaw@stfc.ac.uk',
-#    url =             	'',
+    url =             	'https://github.com/philipkershaw/CertificateAuthority',
     platforms =         ['POSIX', 'Linux', 'Windows'],
     install_requires =  ['ndg_httpsclient'],
     
