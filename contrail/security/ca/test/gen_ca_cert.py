@@ -7,19 +7,22 @@ Created on Aug 10, 2012
 from OpenSSL import crypto
 
 
-def gen_ca_cert(dn):
+def gen_ca_cert(dn, years_validity=5):
     ca_key = crypto.PKey()
     ca_key.generate_key(crypto.TYPE_RSA, 2048)
 
     ca_cert = crypto.X509()
-    ca_cert.set_version(3)
+    
+    # Versioning is zero indexed!!
+    x509_version = 3
+    ca_cert.set_version(x509_version - 1)
     ca_cert.set_serial_number(1)
     subj = ca_cert.get_subject()
     for k, v in dn.items():
         setattr(subj, k, v)
         
     ca_cert.gmtime_adj_notBefore(0)       
-    ca_cert.gmtime_adj_notAfter(24 * 60 * 60)
+    ca_cert.gmtime_adj_notAfter(24 * 60 * 60 * 365 * years_validity)
     ca_cert.set_issuer(ca_cert.get_subject())
     ca_cert.set_pubkey(ca_key)
     ca_cert.add_extensions([
