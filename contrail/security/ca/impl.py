@@ -54,7 +54,10 @@ class CertificateAuthority(AbstractCertificateAuthority):
         if not isinstance(value, (long, int, basestring)):
             raise TypeError('Expecting int, long or string type for '
                             '"not_before_time_nsecs" got %r type' % type(value))
-        self.__not_before_time_nsecs = long(value)
+        
+        # Nb. PyOpenSSL expects integer value for 
+        # OpenSSL.crypto.X509.gmtime_adj_notAfter
+        self.__not_before_time_nsecs = int(value)
         
     @property
     def not_after_time_nsecs(self):
@@ -66,7 +69,8 @@ class CertificateAuthority(AbstractCertificateAuthority):
         if not isinstance(value, (long, int, basestring)):
             raise TypeError('Expecting int, long or string type for '
                             '"not_after_time_nsecs" got %r type' % type(value))
-        self.__not_after_time_nsecs = long(value)
+            
+        self.__not_after_time_nsecs = int(value)
   
     @property
     def digest(self):

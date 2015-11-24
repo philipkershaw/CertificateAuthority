@@ -43,11 +43,12 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
         
         not_before_nsecs = 0
         not_after_nsecs =  60*60*24*365*5
+
+        ca.not_before_time_nsecs = not_before_nsecs
+        ca.not_after_time_nsecs = not_after_nsecs 
         
         cert = ca.issue_certificate(
                       cert_req, 
-                      not_before_time_nsecs=not_before_nsecs, 
-                      not_after_time_nsecs=not_after_nsecs, 
                       subject_alt_name='DNS:localhost, DNS:localhost.domain')
     
         
@@ -69,14 +70,14 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
                 ext_name = ext.get_short_name()
                 if ext_name == 'subjectAltName':
                     ext_dat = ext.get_data()
-                    print ext_dat
+                    print(ext_dat)
                     dec = decode(ext_dat, asn1Spec=GeneralNames())
-                    print dec
-                    print dec[0].prettyPrint()
+                    print(dec)
+                    print(dec[0].prettyPrint())
                     for i in range(len(dec[0])):
                         dns_name = str(
                                 dec[0].getComponentByPosition(i).getComponent())
-                        print dns_name
+                        print(dns_name)
 
     def test03_create_from_keywords(self):
         ca = CertificateAuthority.from_keywords(
@@ -106,17 +107,21 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
         self.assertIsInstance(ca.key, crypto.PKey, 
                               'ca.key is not an PKey instance')
         
+        self.assertEqual(ca.not_after_time_nsecs, 86400, 
+                         'Expecting not after time of 86400 seconds')
+        
     def test06_issue_cert_with_custom_ext(self):
         key_pair, cert_req, ca = self.__class__._create_ca_and_cert_req()
         
         not_before_nsecs = 0
         not_after_nsecs =  60*60*24*365*5
 
+        ca.not_before_time_nsecs = not_before_nsecs
+        ca.not_after_time_nsecs = not_after_nsecs 
+
         cert = ca.issue_certificate(
-                      cert_req, 
-                      not_before_time_nsecs=not_before_nsecs, 
-                      not_after_time_nsecs=not_after_nsecs, 
-                      extensions=[('nsComment', 'my_cust_val', False)])
+                              cert_req, 
+                              extensions=[('nsComment', 'my_cust_val', False)])
 
         s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, key_pair)
         open(path.join(THIS_DIR, 'my1.key'), 'w').write(s_key)
