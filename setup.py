@@ -21,7 +21,7 @@ except ImportError:
 
 setup(
     name =            	'ContrailCA',
-    version =         	'0.1.0',
+    version =         	'0.2.0',
     description =     	'Certificate Authority',
     long_description = 	'''\
 Provides a simple implementation of a Certificate Authority.  It uses the 
@@ -47,9 +47,9 @@ Examples are contained in ``contrail.security.ca.test``.
     author_email =    	'Philip.Kershaw@stfc.ac.uk',
     maintainer =        'Philip Kershaw',
     maintainer_email =  'Philip.Kershaw@stfc.ac.uk',
-    url =             	'https://github.com/philipkershaw/CertificateAuthority',
+    url =             	'https://github.com/cedadev/CertificateAuthority',
     platforms =         ['POSIX', 'Linux', 'Windows'],
-    install_requires =  ['ndg_httpsclient'],
+    install_requires =  ['pyOpenSSL'],
     
     # Required for Subject Alt Names unit test only
     extras_require = {'subjectAltName_support': 'pyasn1'},

@@ -36,7 +36,7 @@ class CertificateAuthorityWithCallout(AbstractCertificateAuthority):
         @param cert_req: Certificate request to use
         @return: output certificate
         ''' 
-        try:       
+        try:
             out_cert_file = tempfile.NamedTemporaryFile(delete=False)
             in_csr_file = tempfile.NamedTemporaryFile(delete=False)
             s_cert_req = crypto.dump_certificate_request(crypto.FILETYPE_PEM, 
@@ -44,7 +44,6 @@ class CertificateAuthorityWithCallout(AbstractCertificateAuthority):
             in_csr_file.seek(0)
             in_csr_file.write(s_cert_req)
             in_csr_file.close()
-            
             
             cmd_tmpl = string.Template(self.cert_issue_cmd)
             populated_cmd = cmd_tmpl.substitute(in_csr=in_csr_file.name,
