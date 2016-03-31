@@ -53,9 +53,9 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
     
         
         s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, key_pair)
-        open(path.join(THIS_DIR, 'my.key'), 'w').write(s_key)
+        open(path.join(THIS_DIR, 'my.key'), 'w').write(str(s_key))
         s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
-        open(path.join(THIS_DIR, 'my.crt'), 'w').write(s_cert)
+        open(path.join(THIS_DIR, 'my.crt'), 'w').write(str(s_cert))
 
     if PYASN1_SUPPORT:
         def test02_check_ext(self):
@@ -124,9 +124,9 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
                               extensions=[('nsComment', 'my_cust_val', False)])
 
         s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, key_pair)
-        open(path.join(THIS_DIR, 'my1.key'), 'w').write(s_key)
+        open(path.join(THIS_DIR, 'my1.key'), 'w').write(str(s_key))
         s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
-        open(path.join(THIS_DIR, 'my1.crt'), 'w').write(s_cert)
+        open(path.join(THIS_DIR, 'my1.crt'), 'w').write(str(s_cert))
         
         
 if __name__ == "__main__":

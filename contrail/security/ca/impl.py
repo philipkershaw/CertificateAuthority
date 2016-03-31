@@ -8,6 +8,8 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
 import logging
 log = logging.getLogger(__name__)
+
+import six
     
 from OpenSSL import crypto
 
@@ -51,7 +53,7 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @not_before_time_nsecs.setter
     def not_before_time_nsecs(self, value):
-        if not isinstance(value, (long, int, basestring)):
+        if not isinstance(value, six.string_types + six.integer_types):
             raise TypeError('Expecting int, long or string type for '
                             '"not_before_time_nsecs" got %r type' % type(value))
         
@@ -66,7 +68,7 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @not_after_time_nsecs.setter
     def not_after_time_nsecs(self, value):
-        if not isinstance(value, (long, int, basestring)):
+        if not isinstance(value, six.integer_types + six.string_types):
             raise TypeError('Expecting int, long or string type for '
                             '"not_after_time_nsecs" got %r type' % type(value))
             
@@ -182,23 +184,23 @@ class CertificateAuthority(AbstractCertificateAuthority):
         
         cert.set_version(certificate_version)
         
-        # Certificate extensions
+        # Certificate extensions - requires byte string, unicode will fail
         if ca_true:
-            basic_constraints = 'CA:true'
+            basic_constraints = b'CA:true'
         else:
-            basic_constraints = 'CA:false'
+            basic_constraints = b'CA:false'
             
         # Add basic constraints as first element of extensions list
-        basic_constraints_ext = crypto.X509Extension('basicConstraints', 
+        basic_constraints_ext = crypto.X509Extension(b'basicConstraints', 
                                                      True, 
                                                      basic_constraints)
         x509_extensions = [basic_constraints_ext]
             
         # Check for a subject alt names extension, if present add as is.
-        if isinstance(subject_alt_name, basestring):
-            subject_alt_name_ext = crypto.X509Extension('subjectAltName', 
-                                                        False, 
-                                                        subject_alt_name)
+        if isinstance(subject_alt_name, six.string_types):
+            subject_alt_name_ext = crypto.X509Extension(b'subjectAltName', 
+                                                False, 
+                                                six.b(str(subject_alt_name)))
             x509_extensions.append(subject_alt_name_ext)
             
         if extensions:
@@ -228,9 +230,11 @@ class CertificateAuthority(AbstractCertificateAuthority):
         """
         x509_extensions = []
         for ext_name, ext_val, ext_crit in extensions:
-            x509_cust_ext = crypto.X509Extension(ext_name, 
+            # Six and str calls required to yield byte string output for 
+            # Python 3 and 2 and respectively.
+            x509_cust_ext = crypto.X509Extension(six.b(str(ext_name)), 
                                                  ext_crit, 
-                                                 str(ext_val))
+                                                 six.b(str(ext_val)))
             x509_extensions.append(x509_cust_ext)
             
         return x509_extensions
