@@ -1,5 +1,6 @@
 """Certificate Authority default implementation
 """
+from ctypes import string_at
 __author__ = "P J Kershaw"
 __date__ = "19/09/12"
 __copyright__ = "(C) 2012 Science and Technology Facilities Council"
@@ -17,7 +18,12 @@ from contrail.security.ca.cert_req import CertReqUtils
 from contrail.security.ca.base import (AbstractCertificateAuthority, 
                                        CertificateAuthorityError)
 
-
+if six.PY2:
+    _unicode_for_py3 = lambda string_: string_
+else:
+    _unicode_for_py3 = lambda string_: string_.decode()
+    
+    
 class CertificateAuthorityCSRError(CertificateAuthorityError):
     """Error with input certificate signing request"""
 
@@ -217,10 +223,10 @@ class CertificateAuthority(AbstractCertificateAuthority):
             self._write_serial_file()
             
         if log.isEnabledFor(logging.INFO):
-            dn = ''.join(["/%s=%s" % (k, v) 
+            dn = ''.join(["/%s=%s" % (_unicode_for_py3(k), _unicode_for_py3(v)) 
                           for k,v in cert.get_subject().get_components()])
             
-            log.info('Issuing certificate with subject %s', dn)
+            log.info('Issuing certificate with subject %r', dn)
         
         return cert 
     

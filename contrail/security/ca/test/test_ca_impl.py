@@ -53,17 +53,21 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
     
         
         s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, key_pair)
-        open(path.join(THIS_DIR, 'my.key'), 'w').write(str(s_key))
+        with open(path.join(THIS_DIR, 'my.key'), 'wb') as key_file:
+            key_file.write(s_key)
+            
         s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
-        open(path.join(THIS_DIR, 'my.crt'), 'w').write(str(s_cert))
+        with open(path.join(THIS_DIR, 'my.crt'), 'wb') as cert_file:
+            cert_file.write(s_cert)
 
     if PYASN1_SUPPORT:
         def test02_check_ext(self):
+            
+            with open(path.join(THIS_DIR, 'my.crt')) as cert_file:
+                cert_file_txt = cert_file.read()
                 
             # Check for subject alternative names
-            cert = crypto.load_certificate(
-                                    crypto.FILETYPE_PEM, 
-                                    open(path.join(THIS_DIR, 'my.crt')).read())
+            cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_file_txt)
             
             for i in range(cert.get_extension_count()):
                 ext = cert.get_extension(i)
@@ -85,7 +89,7 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
                             key_filepath=self.__class__.CA_KEY_FILEPATH, 
                             key_passwd=self.__class__.CA_KEY_FILE_PASSWD,
                             serial_num_counter=11)
-        self.assert_(ca, 'null ca object')
+        self.assertTrue(ca, 'null ca object')
         self.assertEqual(ca.serial_num_counter, 11, 
                          'Error setting serial_num_counter')
         
@@ -93,7 +97,7 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
         ca = CertificateAuthority.from_files(self.__class__.CA_CERT_FILEPATH, 
                             self.__class__.CA_KEY_FILEPATH, 
                             key_file_passwd=self.__class__.CA_KEY_FILE_PASSWD)
-        self.assert_(ca, 'null ca object')
+        self.assertTrue(ca, 'null ca object')
         self.assertIsInstance(ca.cert, crypto.X509, 
                               'ca.cert is not an X509 instance')
         self.assertIsInstance(ca.key, crypto.PKey, 
@@ -101,7 +105,7 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
         
     def test05_create_from_config(self):
         ca = CertificateAuthority.from_config(self.__class__.CFG_FILEPATH)
-        self.assert_(ca, 'null ca object')
+        self.assertTrue(ca, 'null ca object')
         self.assertIsInstance(ca.cert, crypto.X509, 
                               'ca.cert is not an X509 instance')
         self.assertIsInstance(ca.key, crypto.PKey, 
@@ -124,9 +128,12 @@ class CertificateAuthorityTestCase(CertificateAuthorityBaseTestCase):
                               extensions=[('nsComment', 'my_cust_val', False)])
 
         s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, key_pair)
-        open(path.join(THIS_DIR, 'my1.key'), 'w').write(str(s_key))
+        with open(path.join(THIS_DIR, 'my1.key'), 'wb') as key_file:
+            key_file.write(s_key)
+            
         s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
-        open(path.join(THIS_DIR, 'my1.crt'), 'w').write(str(s_cert))
+        with open(path.join(THIS_DIR, 'my1.crt'), 'wb') as cert_file:
+            cert_file.write(s_cert)
         
         
 if __name__ == "__main__":

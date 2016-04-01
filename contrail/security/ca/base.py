@@ -8,8 +8,14 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
 import six
 
-#from ConfigParser import ConfigParser, SafeConfigParser
-from six.moves.configparser import ConfigParser, SafeConfigParser
+from six.moves.configparser import ConfigParser
+
+# six doesn't seem to handle SafeConfigParser deprecation correctly:
+if six.PY2:   
+    from six.moves.configparser import SafeConfigParser as SafeConfigParser_
+else:
+    from six.moves.configparser import ConfigParser as SafeConfigParser_
+    
 from os import path
 from abc import ABCMeta, abstractmethod
 import logging
@@ -91,7 +97,7 @@ class AbstractCertificateAuthority(object):
         if isinstance(cfg, six.string_types):
             config_file_path = path.expandvars(cfg)
             here_dir = path.dirname(config_file_path)
-            _cfg = SafeConfigParser(defaults={'here':here_dir})
+            _cfg = SafeConfigParser_(defaults={'here':here_dir})
             _cfg.optionxform = str
 
             _cfg.read(config_file_path)
@@ -212,15 +218,21 @@ class AbstractCertificateAuthority(object):
     def parse_files(self, cert_filepath, key_filepath, key_file_passwd=None):
         """Read certificate and private key files setting instance variables
         """
-        args = crypto.FILETYPE_PEM, open(key_filepath).read()
+        with open(key_filepath) as key_file:
+            key_file_txt = key_file.read()
+            
+        args = crypto.FILETYPE_PEM, key_file_txt
         if key_file_passwd:
             # Force coercion to byte string for both Python 2 and 3
             args += (six.b(str(key_file_passwd)), )
             
         self.key = crypto.load_privatekey(*args)
         
+        with open(cert_filepath) as cert_file:
+            cert_file_txt = cert_file.read()
+            
         self.cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
-                                            open(cert_filepath).read())
+                                            cert_file_txt)
 
         
     @classmethod

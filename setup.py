@@ -49,7 +49,7 @@ Examples are contained in ``contrail.security.ca.test``.
     maintainer_email =  'Philip.Kershaw@stfc.ac.uk',
     url =             	'https://github.com/cedadev/CertificateAuthority',
     platforms =         ['POSIX', 'Linux', 'Windows'],
-    install_requires =  ['pyOpenSSL'],
+    install_requires =  ['PyOpenSSL'],
     
     # Required for Subject Alt Names unit test only
     extras_require = {'subjectAltName_support': 'pyasn1'},
