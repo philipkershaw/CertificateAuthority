@@ -21,7 +21,7 @@ except ImportError:
 
 setup(
     name =            	'ContrailCA',
-    version =         	'0.2.0',
+    version =         	'0.3.0',
     description =     	'Certificate Authority',
     long_description = 	'''\
 Provides a simple implementation of a Certificate Authority.  It uses the 
@@ -33,11 +33,11 @@ The code has been developed for the Contrail Project, http://contrail-project.eu
 
 Prerequisites
 =============
-This has been developed and tested for Python 2.7.
+This has been developed and tested for Python 2.7 and 3.5.
 
 Installation
 ============
-Installation can be performed using easy_install or pip.
+Installation can be performed using pip.
 
 Configuration
 =============
@@ -58,14 +58,14 @@ Examples are contained in ``contrail.security.ca.test``.
     packages =          find_packages(),
     package_data =      {
         'contrail.security.ca.test': [
-            'README', '*.cfg', '*.crt', '*.key',
+            'README', 'LICENSE', '*.cfg', '*.crt', '*.key',
             'ca_config/serial', 'ca_config/index.txt', 
             'ca_config/newcerts/README', 'ca_config/*.crt', 'ca_config/*.key', 
             'ca_config/test-ca.cfg'
             ]
     },
     classifiers = [
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Environment :: Web Environment',
         'Intended Audience :: End Users/Desktop',
@@ -77,6 +77,7 @@ Examples are contained in ``contrail.security.ca.test``.
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
         'Topic :: Security',
         'Topic :: Internet',
         'Topic :: Scientific/Engineering',

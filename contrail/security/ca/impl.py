@@ -1,6 +1,5 @@
 """Certificate Authority default implementation
 """
-from ctypes import string_at
 __author__ = "P J Kershaw"
 __date__ = "19/09/12"
 __copyright__ = "(C) 2012 Science and Technology Facilities Council"
@@ -86,7 +85,7 @@ class CertificateAuthority(AbstractCertificateAuthority):
     
     @digest.setter
     def digest(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             raise TypeError('Expecting string type for "digest" '
                             'got %r type' % type(value))
         self.__digest = value
@@ -97,7 +96,7 @@ class CertificateAuthority(AbstractCertificateAuthority):
     
     @certificate_version.setter
     def certificate_version(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             raise TypeError('Expecting string type for "certificate_version" '
                             'got %r type' % type(value))
         self.__certificate_version = value
@@ -109,11 +108,11 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @ca_true.setter
     def ca_true(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             self.__ca_true = value.lower() in ('1', 'true')
             
-        elif isinstance(value, (long, int)):
-            self.__ca_true = long(value)
+        elif isinstance(value, six.integer_types):
+            self.__ca_true = six.integer_types[-1](value)
         else:
             raise TypeError('Expecting int or long type for '
                             '"ca_true" got %r type' % type(value))
@@ -125,11 +124,11 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @subject_alt_name.setter
     def subject_alt_name(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             self.__subject_alt_name = value.lower() in ('1', 'true')
             
-        elif isinstance(value, (long, int)):
-            self.__subject_alt_name = long(value)
+        elif isinstance(value, six.integer_types):
+            self.__subject_alt_name = six.integer_types[-1](value)
         else:
             raise TypeError('Expecting int or long type for '
                             '"ca_true" got %r type' % type(value))        
