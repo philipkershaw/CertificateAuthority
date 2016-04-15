@@ -6,7 +6,16 @@ __copyright__ = "(C) 2012 Science and Technology Facilities Council"
 __license__ = "BSD - see LICENSE file in top-level directory"
 __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
-from ConfigParser import ConfigParser, SafeConfigParser
+import six
+
+from six.moves.configparser import ConfigParser
+
+# six doesn't seem to handle SafeConfigParser deprecation correctly:
+if six.PY2:   
+    from six.moves.configparser import SafeConfigParser as SafeConfigParser_
+else:
+    from six.moves.configparser import ConfigParser as SafeConfigParser_
+    
 from os import path
 from abc import ABCMeta, abstractmethod
 import logging
@@ -34,7 +43,7 @@ class AbstractCertificateAuthority(object):
     CERT_FILEPATH_OPTNAME = "cert_filepath"
     PRIKEY_FILEPATH_OPTNAME = "key_filepath"
     PRIKEY_PASSWD_OPTNAME = "key_passwd"
-    SERIAL_NUM_DEFAULT = 0L
+    SERIAL_NUM_DEFAULT = six.integer_types[-1](0)
     MIN_KEY_NBITS_DEFAULT = 2048
     
     __metaclass__ = ABCMeta
@@ -85,10 +94,10 @@ class AbstractCertificateAuthority(object):
         @param section: configuration file section from which to extract
         parameters.
         '''  
-        if isinstance(cfg, basestring):
+        if isinstance(cfg, six.string_types):
             config_file_path = path.expandvars(cfg)
             here_dir = path.dirname(config_file_path)
-            _cfg = SafeConfigParser(defaults={'here':here_dir})
+            _cfg = SafeConfigParser_(defaults={'here':here_dir})
             _cfg.optionxform = str
 
             _cfg.read(config_file_path)
@@ -114,7 +123,7 @@ class AbstractCertificateAuthority(object):
             cert_filepath = kw.pop(cert_filepath_opt)
             prikey_filepath = kw.pop(prikey_filepath_opt)
             
-        except KeyError, e:
+        except KeyError as e:
             raise CertificateAuthorityConfigError('Missing option from config '
                                                   '%s' % str(e))
 
@@ -209,14 +218,21 @@ class AbstractCertificateAuthority(object):
     def parse_files(self, cert_filepath, key_filepath, key_file_passwd=None):
         """Read certificate and private key files setting instance variables
         """
-        args = crypto.FILETYPE_PEM, open(key_filepath).read()
+        with open(key_filepath) as key_file:
+            key_file_txt = key_file.read()
+            
+        args = crypto.FILETYPE_PEM, key_file_txt
         if key_file_passwd:
-            args += (key_file_passwd, )
+            # Force coercion to byte string for both Python 2 and 3
+            args += (six.b(str(key_file_passwd)), )
             
         self.key = crypto.load_privatekey(*args)
         
+        with open(cert_filepath) as cert_file:
+            cert_file_txt = cert_file.read()
+            
         self.cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
-                                            open(cert_filepath).read())
+                                            cert_file_txt)
 
         
     @classmethod
@@ -261,10 +277,10 @@ class AbstractCertificateAuthority(object):
 
     @serial_num_counter.setter
     def serial_num_counter(self, value):
-        if not isinstance(value, (long, int)):
+        if not isinstance(value, six.integer_types):
             raise TypeError('Expecting int or long type for '
                             '"serial_num_counter" got %r type' % type(value))
-        self.__serial_num_counter = long(value)
+        self.__serial_num_counter = six.integer_types[-1](value)
         
     @property
     def serial_filepath(self):
@@ -272,7 +288,7 @@ class AbstractCertificateAuthority(object):
     
     @serial_filepath.setter
     def serial_filepath(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             raise TypeError('Expecting string type for "serial_filepath" '
                             'got %r type' % type(value))
         self.__serial_filepath = value
@@ -284,17 +300,18 @@ class AbstractCertificateAuthority(object):
 
     @min_key_nbits.setter
     def min_key_nbits(self, value):
-        if not isinstance(value, (long, int, basestring)):
+        if not isinstance(value, six.integer_types + six.string_types):
             raise TypeError('Expecting int or long type for "min_key_nbits" '
                             'got %r type' % type(value))
-        self.__min_key_nbits = long(value)
+            
+        self.__min_key_nbits = six.integer_types[-1](value)
           
     def _read_serial_file(self):
         '''Read serial number from serial file'''
         serial_file = open(self.serial_filepath, 'r')
         
         try:
-            self.serial_num_counter = long(serial_file.read())
+            self.serial_num_counter = six.integer_types[-1](serial_file.read())
         finally:
             serial_file.close()
                     

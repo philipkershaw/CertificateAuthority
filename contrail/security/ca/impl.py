@@ -8,6 +8,8 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
 import logging
 log = logging.getLogger(__name__)
+
+import six
     
 from OpenSSL import crypto
 
@@ -15,7 +17,12 @@ from contrail.security.ca.cert_req import CertReqUtils
 from contrail.security.ca.base import (AbstractCertificateAuthority, 
                                        CertificateAuthorityError)
 
-
+if six.PY2:
+    _unicode_for_py3 = lambda string_: string_
+else:
+    _unicode_for_py3 = lambda string_: string_.decode()
+    
+    
 class CertificateAuthorityCSRError(CertificateAuthorityError):
     """Error with input certificate signing request"""
 
@@ -51,7 +58,7 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @not_before_time_nsecs.setter
     def not_before_time_nsecs(self, value):
-        if not isinstance(value, (long, int, basestring)):
+        if not isinstance(value, six.string_types + six.integer_types):
             raise TypeError('Expecting int, long or string type for '
                             '"not_before_time_nsecs" got %r type' % type(value))
         
@@ -66,7 +73,7 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @not_after_time_nsecs.setter
     def not_after_time_nsecs(self, value):
-        if not isinstance(value, (long, int, basestring)):
+        if not isinstance(value, six.integer_types + six.string_types):
             raise TypeError('Expecting int, long or string type for '
                             '"not_after_time_nsecs" got %r type' % type(value))
             
@@ -78,7 +85,7 @@ class CertificateAuthority(AbstractCertificateAuthority):
     
     @digest.setter
     def digest(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             raise TypeError('Expecting string type for "digest" '
                             'got %r type' % type(value))
         self.__digest = value
@@ -89,7 +96,7 @@ class CertificateAuthority(AbstractCertificateAuthority):
     
     @certificate_version.setter
     def certificate_version(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             raise TypeError('Expecting string type for "certificate_version" '
                             'got %r type' % type(value))
         self.__certificate_version = value
@@ -101,11 +108,11 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @ca_true.setter
     def ca_true(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             self.__ca_true = value.lower() in ('1', 'true')
             
-        elif isinstance(value, (long, int)):
-            self.__ca_true = long(value)
+        elif isinstance(value, six.integer_types):
+            self.__ca_true = six.integer_types[-1](value)
         else:
             raise TypeError('Expecting int or long type for '
                             '"ca_true" got %r type' % type(value))
@@ -117,11 +124,11 @@ class CertificateAuthority(AbstractCertificateAuthority):
 
     @subject_alt_name.setter
     def subject_alt_name(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             self.__subject_alt_name = value.lower() in ('1', 'true')
             
-        elif isinstance(value, (long, int)):
-            self.__subject_alt_name = long(value)
+        elif isinstance(value, six.integer_types):
+            self.__subject_alt_name = six.integer_types[-1](value)
         else:
             raise TypeError('Expecting int or long type for '
                             '"ca_true" got %r type' % type(value))        
@@ -182,23 +189,23 @@ class CertificateAuthority(AbstractCertificateAuthority):
         
         cert.set_version(certificate_version)
         
-        # Certificate extensions
+        # Certificate extensions - requires byte string, unicode will fail
         if ca_true:
-            basic_constraints = 'CA:true'
+            basic_constraints = b'CA:true'
         else:
-            basic_constraints = 'CA:false'
+            basic_constraints = b'CA:false'
             
         # Add basic constraints as first element of extensions list
-        basic_constraints_ext = crypto.X509Extension('basicConstraints', 
+        basic_constraints_ext = crypto.X509Extension(b'basicConstraints', 
                                                      True, 
                                                      basic_constraints)
         x509_extensions = [basic_constraints_ext]
             
         # Check for a subject alt names extension, if present add as is.
-        if isinstance(subject_alt_name, basestring):
-            subject_alt_name_ext = crypto.X509Extension('subjectAltName', 
-                                                        False, 
-                                                        subject_alt_name)
+        if isinstance(subject_alt_name, six.string_types):
+            subject_alt_name_ext = crypto.X509Extension(b'subjectAltName', 
+                                                False, 
+                                                six.b(str(subject_alt_name)))
             x509_extensions.append(subject_alt_name_ext)
             
         if extensions:
@@ -215,10 +222,10 @@ class CertificateAuthority(AbstractCertificateAuthority):
             self._write_serial_file()
             
         if log.isEnabledFor(logging.INFO):
-            dn = ''.join(["/%s=%s" % (k, v) 
+            dn = ''.join(["/%s=%s" % (_unicode_for_py3(k), _unicode_for_py3(v)) 
                           for k,v in cert.get_subject().get_components()])
             
-            log.info('Issuing certificate with subject %s', dn)
+            log.info('Issuing certificate with subject %r', dn)
         
         return cert 
     
@@ -228,9 +235,11 @@ class CertificateAuthority(AbstractCertificateAuthority):
         """
         x509_extensions = []
         for ext_name, ext_val, ext_crit in extensions:
-            x509_cust_ext = crypto.X509Extension(ext_name, 
+            # Six and str calls required to yield byte string output for 
+            # Python 3 and 2 and respectively.
+            x509_cust_ext = crypto.X509Extension(six.b(str(ext_name)), 
                                                  ext_crit, 
-                                                 str(ext_val))
+                                                 six.b(str(ext_val)))
             x509_extensions.append(x509_cust_ext)
             
         return x509_extensions
