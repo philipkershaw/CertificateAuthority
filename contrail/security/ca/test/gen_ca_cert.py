@@ -33,7 +33,7 @@ def gen_ca_cert(dn, years_validity=5):
       crypto.X509Extension("subjectKeyIdentifier", False, "hash",
                                    subject=ca_cert),
       ])
-    ca_cert.sign(ca_key, "sha1")
+    ca_cert.sign(ca_key, "sha256")
     
     return ca_key, ca_cert
 

@@ -85,5 +85,9 @@ Examples are contained in ``contrail.security.ca.test``.
         'Topic :: System :: Systems Administration :: Authentication/Directory',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
+    entry_points={
+        'console_scripts': ['gen_ca_cert = contrail.security.ca.utils:main',
+                            ],
+        },
     zip_safe = False
 )
