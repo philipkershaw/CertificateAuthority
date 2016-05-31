@@ -256,7 +256,7 @@ class CertificateAuthority(AbstractCA):
                     not_after_time=AbstractCA.CACERT_DEFAULT_NOT_AFTER_TIME):
         '''Helper method - Generate key pair and certificate for a root CA'''
         ca_key = crypto.PKey()
-        ca_key.generate_key(crypto.TYPE_RSA, cls.KEY_N_BITS)
+        ca_key.generate_key(crypto.TYPE_RSA, cls.MIN_KEY_NBITS_DEFAULT)
     
         ca_cert = crypto.X509()
         
@@ -285,12 +285,13 @@ class CertificateAuthority(AbstractCA):
         return ca_key, ca_cert
     
     @classmethod
-    def gen_root_ca(cls, **gen_root_ca_kwargs):
+    def gen_root_ca(cls, *gen_root_ca_args, **gen_root_ca_kwargs):
         '''Instantiate certificate authority object containing a newly
         created root CA cert and key pair.  NB. caller must take responsibility
         to populate other CA object attributes
         '''
         ca = CertificateAuthority()
-        ca.key, ca.cert = cls.gen_root_ca(**gen_root_ca_kwargs)
+        ca.key, ca.cert = cls.gen_root_ca_cert(*gen_root_ca_args,
+                                               **gen_root_ca_kwargs)
         
         return ca

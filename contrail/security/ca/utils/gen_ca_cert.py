@@ -69,19 +69,19 @@ def main():
     else:
         cert_subj = options.cert_subj
     
-    if options.prikey_passphrase is not None:
-        dump_privatekey_args = ("blowfish", options.prikey_passphrase)  
+    if options.cakey_passphrase is not None:
+        dump_privatekey_args = ("blowfish", options.cakey_passphrase)  
     else:
         dump_privatekey_args = ()
         
-    key_pair, cert = CertificateAuthority.gen_root_ca(cert_subj)
+    ca = CertificateAuthority.gen_root_ca(cert_subj)
     
-    s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, key_pair, 
+    s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, ca.key, 
                                    *dump_privatekey_args)
     with open(options.cakey_filepath, 'wb') as key_file:
         key_file.write(s_key)
     
-    s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+    s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, ca.cert)
     with open(options.cacert_filepath, 'wb') as cert_file:
         cert_file.write(s_cert)
 
