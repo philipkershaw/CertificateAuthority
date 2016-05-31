@@ -8,12 +8,14 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
 from OpenSSL import crypto
 
+from contrail.security.ca.base import AbstractCertificateAuthority
+
 
 class CertReqUtils(object):
     """Utility class containing helper functions for use with Certificate
     Authority"""
-    PRIKEY_NBITS_DEFAULT = 1024
-    MESSAGE_DIGEST_TYPE_DEFAULT = "md5"
+    PRIKEY_NBITS_DEFAULT = AbstractCertificateAuthority.MIN_KEY_NBITS_DEFAULT
+    DIGEST_TYPE_DEFAULT = AbstractCertificateAuthority.DIGEST_TYPE_DEFAULT
         
     @staticmethod
     def create_key_pair(nbits_for_key=PRIKEY_NBITS_DEFAULT):
@@ -32,7 +34,7 @@ class CertReqUtils(object):
     @staticmethod
     def create_cert_req(dn, 
                         key_pair, 
-                        message_digest=MESSAGE_DIGEST_TYPE_DEFAULT):
+                        message_digest=DIGEST_TYPE_DEFAULT):
         """Create a certificate request.
         
         @param dn: The distinguished name of the subject of the request, 
