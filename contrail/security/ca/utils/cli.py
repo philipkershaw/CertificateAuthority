@@ -34,6 +34,8 @@ class CertificateAuthorityCLI(object):
     
     @classmethod
     def _parse_passphrase_cmdline_arg(cls, passphrase_in):
+        '''Convenience utility for managing passphrase input from stdin
+        '''
         if passphrase_in == "-":
             return sys.stdin.read().strip()
         else:
@@ -41,41 +43,69 @@ class CertificateAuthorityCLI(object):
         
     def __init__(self):
         self.ca = CertificateAuthority()
+
+    @staticmethod
+    def parse_subject_name(subj):
+        '''Convert a certificate subject name from a string into a list of
+        key value pair tuples
         
-    def _issue_cert(self, options):
-        with open(options.cacert_in_filepath, 'rb') as cacert_file:
+        :return: list of key value pair tuples corresponding to subject name
+        fields
+        '''
+        for item in subj.split(','):
+            field, value = item.split('=')
+            yield field.strip(), value.strip()
+        
+    def _issue_cert(self, cmdline_args):
+        '''Issue certificate based on command line arguments
+
+        :type    argparse.Namespace
+        :param     cmdline_args: command line arguments from argparse 
+        ArgumentParser
+        '''
+        with open(cmdline_args.cacert_in_filepath, 'rb') as cacert_file:
             s_cacert = cacert_file.read()
             
         self.ca.cert = crypto.load_certificate(crypto.FILETYPE_PEM, s_cacert)
 
-        with open(options.cakey_in_filepath, 'rb') as cakey_file:
+        with open(cmdline_args.cakey_in_filepath, 'rb') as cakey_file:
             s_cakey = cakey_file.read()
             
-        self.ca.key = crypto.load_certificate(crypto.FILETYPE_PEM, s_cakey)
+        self.ca.key = crypto.load_privatekey(crypto.FILETYPE_PEM, s_cakey)
+
+        with open(cmdline_args.certreq_filepath, 'rb') as certreq_file:
+            s_certreq = certreq_file.read()
+
+        certreq = crypto.load_certificate_request(crypto.FILETYPE_PEM, 
+                                                  s_certreq)
             
         cert = self.ca.issue_certificate( 
-                        options.cert_req,
+                        certreq,
                         ca_true=False,
-                        subject_alt_name=True)
+                        subject_alt_name=cmdline_args.subject_alt_names)
         
         s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
-        with open(options.cert_filepath, 'wb') as cert_file:
+    
+        with open(cmdline_args.cert_filepath, 'wb') as cert_file:
             cert_file.write(s_cert)  
               
-    def _gen_root_ca(self, options):
-        def _parse_subject_name(subj):
-            for item in subj.split(','):
-                field, value = item.split('=')
-                yield field.strip(), value.strip()
-                
-        if isinstance(options.cacert_subj, six.string_types):
-            cacert_subj = _parse_subject_name(options.cacert_subj)
-        else:
-            cacert_subj = options.cacert_subj
+    def _gen_root_ca(self, cmdline_args):
+        '''Generate fresh root CA cert and key based on command line inputs
         
-        if options.cakey_passphrase is not None:
+        :type    argparse.Namespace
+        :param     cmdline_args: command line arguments from argparse 
+        ArgumentParser
+        '''
+           
+        if isinstance(cmdline_args.cacert_subj, six.string_types):
+            cacert_subj = self.__class__.parse_subject_name(
+                                                cmdline_args.cacert_subj)
+        else:
+            cacert_subj = cmdline_args.cacert_subj
+        
+        if cmdline_args.cakey_passphrase is not None:
             cakey_passphrase = self.__class__._parse_passphrase_cmdline_arg(
-                                                    options.cakey_passphrase)
+                                                cmdline_args.cakey_passphrase)
             dump_privatekey_args = (self.__class__.PASSPHRASE_ENCR_ALG, 
                                     cakey_passphrase)  
         else:
@@ -85,11 +115,11 @@ class CertificateAuthorityCLI(object):
         
         s_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, ca.key, 
                                        *dump_privatekey_args)
-        with open(options.cakey_filepath, 'wb') as key_file:
+        with open(cmdline_args.cakey_filepath, 'wb') as key_file:
             key_file.write(s_key)
         
         s_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, ca.cert)
-        with open(options.cacert_filepath, 'wb') as cert_file:
+        with open(cmdline_args.cacert_filepath, 'wb') as cert_file:
             cert_file.write(s_cert)
         
     def main(self, *args):
@@ -186,25 +216,32 @@ class CertificateAuthorityCLI(object):
                                 " certificate - defaults %r" % 
                                 self.__class__.DEF_CAPRIKEY_FILEPATH)
     
-        gen_ca_arg_parser.add_argument("-P", "--ca-pri-key-passphrase-in", 
+        issue_cert_arg_parser.add_argument("-P", "--ca-pri-key-passphrase-in", 
                           dest="cakey_passphrase", 
                           metavar="PASSPHRASE",
                           default=None,
                           help="Passphrase for CA Private key file - required "
                                "if private key file is password protected. Set "
                                "to '-' to read from standard input")
-                
+            
+        issue_cert_arg_parser.add_argument("-S", "--subject-alt-names", 
+                          dest="subject_alt_names", 
+                          metavar="<hostname 1>, ... <hostname n>",
+                          default=None,
+                          help="Subject alternative names extension.  Set to "
+                               "the hostname or hostnames to include.")
+                        
         issue_cert_arg_parser.set_defaults(func=self._issue_cert)
         
         # Parses from arguments input to this method if set, otherwise parses 
         # from sys.argv
-        args = parser.parse_args(*args)
-        if args.debug:
+        parsed_args = parser.parse_args(args)
+        if parsed_args.debug:
             logging.getLogger().setLevel(logging.DEBUG)
          
         # Call appropriate command function assigned via set_defaults calls 
         # above   
-        args.func(args)
+        parsed_args.func(parsed_args)
     
 
 if __name__=='__main__':

@@ -136,7 +136,7 @@ class CertificateAuthority(AbstractCA):
                         digest=AbstractCA.DIGEST_TYPE_DEFAULT,
                         certificate_version=AbstractCA.CERTIFICATE_VERSION3,
                         ca_true=False,
-                        subject_alt_name=False,
+                        subject_alt_name=None,
                         extensions=None):
         """
         Generate a certificate given a certificate request.

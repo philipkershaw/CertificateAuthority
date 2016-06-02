@@ -46,7 +46,8 @@ class CertReqUtils(object):
           OU    - Organizational unit name
           CN    - Common name
           email - E-mail address
-        @type dn: dict
+        @type dn: dict or a list of two element tuples corresponding to field
+        name and field value
         @type key_pair: string/None
         @param key_pair: public/private key pair
         @type message_digest: basestring
@@ -60,7 +61,12 @@ class CertReqUtils(object):
         cert_req = crypto.X509Req()
         subj = cert_req.get_subject()
     
-        for k, v in dn.items():
+        if isinstance(dn, dict):
+            dn_items = dn.items()
+        else:
+            dn_items = dn
+            
+        for k, v in dn_items:
             setattr(subj, k, v)
         
         # Create public key object
