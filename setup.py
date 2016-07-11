@@ -21,7 +21,7 @@ except ImportError:
 
 setup(
     name =            	'ContrailCA',
-    version =         	'0.3.0',
+    version =         	'0.4.0',
     description =     	'Certificate Authority',
     long_description = 	'''\
 Provides a simple implementation of a Certificate Authority.  It uses the 
