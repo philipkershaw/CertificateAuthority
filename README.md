@@ -7,6 +7,12 @@ issuing process if required.
 
 The code has been developed for the Contrail Project, http://contrail-project.eu/
 
+Releases
+--------
+ * 0.4.0
+  - Created simple command line interface for issuing certificates and added 
+    Python 3 support
+  
 Prerequisites
 -------------
 This has been developed and tested for Python 2.7 and 3.5.

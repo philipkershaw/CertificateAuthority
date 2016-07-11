@@ -38,13 +38,23 @@ class CertificateIssuingError(CertificateAuthorityError):
     
 class AbstractCertificateAuthority(object):
     """Provide basic functionality for a Certificate Authority"""
+    DEFAULT_NOT_BEFORE_TIME = 0
+    DEFAULT_NOT_AFTER_TIME = 60*60*24*365*3 # 3 years
+    
+    CACERT_DEFAULT_NOT_BEFORE_TIME = 0
+    CACERT_DEFAULT_NOT_AFTER_TIME = 60*60*24*365*5 # 5 years
+
+    MIN_KEY_NBITS_DEFAULT = 2048
+    DIGEST_TYPE_DEFAULT = "sha256"
+
     CERTIFICATE_VERSION2 = 1
     CERTIFICATE_VERSION3 = 2
+
+    SERIAL_NUM_DEFAULT = six.integer_types[-1](0)
+
     CERT_FILEPATH_OPTNAME = "cert_filepath"
     PRIKEY_FILEPATH_OPTNAME = "key_filepath"
     PRIKEY_PASSWD_OPTNAME = "key_passwd"
-    SERIAL_NUM_DEFAULT = six.integer_types[-1](0)
-    MIN_KEY_NBITS_DEFAULT = 2048
     
     __metaclass__ = ABCMeta
     __slots__ = (

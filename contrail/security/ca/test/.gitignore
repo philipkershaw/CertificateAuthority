@@ -4,3 +4,8 @@
 /my.key
 /my1.crt
 /my1.key
+/ca.crt
+/ca.key
+/certreq.csr
+/newcert.crt
+/new-cert-with-subj-alt-name.crt

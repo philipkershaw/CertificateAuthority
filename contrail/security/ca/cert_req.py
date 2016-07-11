@@ -8,12 +8,14 @@ __contact__ = "Philip.Kershaw@stfc.ac.uk"
 __revision__ = "$Id$"
 from OpenSSL import crypto
 
+from contrail.security.ca.base import AbstractCertificateAuthority
+
 
 class CertReqUtils(object):
     """Utility class containing helper functions for use with Certificate
     Authority"""
-    PRIKEY_NBITS_DEFAULT = 1024
-    MESSAGE_DIGEST_TYPE_DEFAULT = "md5"
+    PRIKEY_NBITS_DEFAULT = AbstractCertificateAuthority.MIN_KEY_NBITS_DEFAULT
+    DIGEST_TYPE_DEFAULT = AbstractCertificateAuthority.DIGEST_TYPE_DEFAULT
         
     @staticmethod
     def create_key_pair(nbits_for_key=PRIKEY_NBITS_DEFAULT):
@@ -32,7 +34,7 @@ class CertReqUtils(object):
     @staticmethod
     def create_cert_req(dn, 
                         key_pair, 
-                        message_digest=MESSAGE_DIGEST_TYPE_DEFAULT):
+                        message_digest=DIGEST_TYPE_DEFAULT):
         """Create a certificate request.
         
         @param dn: The distinguished name of the subject of the request, 
@@ -44,7 +46,8 @@ class CertReqUtils(object):
           OU    - Organizational unit name
           CN    - Common name
           email - E-mail address
-        @type dn: dict
+        @type dn: dict or a list of two element tuples corresponding to field
+        name and field value
         @type key_pair: string/None
         @param key_pair: public/private key pair
         @type message_digest: basestring
@@ -58,7 +61,12 @@ class CertReqUtils(object):
         cert_req = crypto.X509Req()
         subj = cert_req.get_subject()
     
-        for k, v in dn.items():
+        if isinstance(dn, dict):
+            dn_items = dn.items()
+        else:
+            dn_items = dn
+            
+        for k, v in dn_items:
             setattr(subj, k, v)
         
         # Create public key object
